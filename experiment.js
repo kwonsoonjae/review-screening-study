@@ -87,10 +87,12 @@
       prolific_study: D.study_id, prolific_session: D.session_id, started: D.started_at, ua: D.user_agent, version: D.version,
       data_json: JSON.stringify(D) };
   }
+  let saveChain = Promise.resolve(true);
+  function enqueue(body) { saveChain = saveChain.then(() => post(body)); return saveChain; }
   function checkpoint(step) {
     D.step = step;
     log("step", { step });
-    if (LIVE) post({ kind: "participant", participant: participantRow() });
+    if (LIVE) enqueue({ kind: "participant", participant: participantRow() });
   }
 
   async function assignCondition() {
@@ -305,7 +307,7 @@
     D.duration_s = Math.round((Date.now() - t0) / 1000);
     screen(`<h1>Saving your responses…</h1><p>Please do not close this window.</p><div class="spinner"></div>`, 11);
     let saved = false;
-    if (LIVE) saved = await post({ kind: "participant", participant: participantRow() });
+    if (LIVE) saved = await enqueue({ kind: "participant", participant: participantRow() });
     const done = `https://app.prolific.com/submissions/complete?cc=${encodeURIComponent(C.PROLIFIC_COMPLETION_CODE)}`;
     const summary = `<h2>Round 2 results</h2>${statTiles(D.round2)}
       <div class="card"><b>Total: ${total} points</b> · bonus $${D.bonus_usd.toFixed(2)}, paid within a few days.</div>`;
